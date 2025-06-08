@@ -53,17 +53,26 @@ class LinearClassifierExp(ExpTracker):
         else:
             raise Exception(f"Unknown case type: cfg['case']={self.cfg['case']}.")
 
-        self.trainloader = DataLoader(TensorDataset(x_train, y_train), batch_size=1, shuffle=False)
-        self.testloader = DataLoader(TensorDataset(x_test, y_test), batch_size=32, shuffle=False)
+        self.trainloader = DataLoader(
+            TensorDataset(x_train, y_train), batch_size=1, shuffle=False
+        )
+        self.testloader = DataLoader(
+            TensorDataset(x_test, y_test), batch_size=32, shuffle=False
+        )
 
         if saveData:
-            datapath = os.path.join(self.cfg["tmp_dir"], f"data_case{self.cfg['case']}.pt")
-            torch.save({
-                "x_train": x_train,
-                "y_train": y_train,
-                "x_test": x_test,
-                "y_test": y_test,
-            }, datapath)
+            datapath = os.path.join(
+                self.cfg["tmp_dir"], f"data_case{self.cfg['case']}.pt"
+            )
+            torch.save(
+                {
+                    "x_train": x_train,
+                    "y_train": y_train,
+                    "x_test": x_test,
+                    "y_test": y_test,
+                },
+                datapath,
+            )
 
     def train_epoch(self):
         correct = 0

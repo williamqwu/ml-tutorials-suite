@@ -1,5 +1,6 @@
 import torch
 
+
 class Perceptron(torch.nn.Module):
     def __init__(self, input_dim):
         super().__init__()
