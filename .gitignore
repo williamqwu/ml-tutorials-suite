@@ -1,0 +1,7 @@
+*__pycache__*
+*.pyc
+*.txt
+.vscode/*
+
+# output
+.tmp/*
