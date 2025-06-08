@@ -10,6 +10,7 @@ class LinearGDExp(ExpTracker):
         super().__init__()
         # init general config
         self.cfg["case"] = case_study
+        assert mode in ["gd", "sgd"]
         self.cfg["tr_mode"] = mode
         self.cfg["epochs"] = 25
         self.cfg["input_dim"] = 2

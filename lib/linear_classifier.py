@@ -13,6 +13,8 @@ class LinearClassifierExp(ExpTracker):
         # init general config
         self.cfg["case"] = case_study
         if case_study != 0:
+            # for demo, we test on 1/4 of the data
+            # technically "epoch" means "phase" here
             self.cfg["epochs"] = 25
         else:
             self.cfg["epochs"] = 6
@@ -84,7 +86,7 @@ class LinearClassifierExp(ExpTracker):
                 self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"]
             )
             x_test, y_test = __genk(
-                self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"]
+                self.cfg["n_test"], self.cfg["input_dim"], self.cfg["case"]
             )
 
         self.trainloader = DataLoader(
