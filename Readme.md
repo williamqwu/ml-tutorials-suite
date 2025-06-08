@@ -10,14 +10,14 @@ Additional notes:
 
 | Module | Title                                       | Subsection                                              | Requires GPU? |
 | ------ | ------------------------------------------- | ------------------------------------------------------- | ------------- |
-| 1      | Online Perceptron for Linear Classification | 1.1: A Toy Example from Slide 8                         | ❌ CPU-only    |
-|        |                                             | 1.2: Perceptron on Large-Margin Linearly Separable Data | ❌ CPU-only    |
-|        |                                             | 1.3: Perceptron on Small-Margin Linearly Separable Data | ❌ CPU-only    |
-|        |                                             | 1.4: Perceptron on Non-Linearly Separable Data          | ❌ CPU-only    |
-| 2      | From Taylor Expansions to Gradient Descent  | 2.1: Taylor Approximation on toy functions              | ❌ CPU-only    |
+| 1      | Online Perceptron for Linear Classification | 1.1: A toy example from slide 8                         | ❌ CPU-only    |
+|        |                                             | 1.2: Perceptron on large-margin linearly separable data | ❌ CPU-only    |
+|        |                                             | 1.3: Perceptron on small-margin linearly separable data | ❌ CPU-only    |
+|        |                                             | 1.4: Perceptron on non-linearly separable data          | ❌ CPU-only    |
+| 2      | From Taylor Expansions to Gradient Descent  | 2.1: Taylor approximation on toy functions              | ❌ CPU-only    |
 |        |                                             | 2.2: Full-batch Gradient Descent                        | ❌ CPU-only    |
-|        |                                             | 2.3: Compare Stochastic vs Full-Batch Gradient Descent  | ❌ CPU-only    |
+|        |                                             | 2.3: Compare stochastic vs full-batch Gradient Descent  | ❌ CPU-only    |
 
 ## References
 - [ziyueluocs/torch-tutorial](https://github.com/ziyueluocs/torch-tutorial) for environment setup
-- [alochaus/taylor-series](github.com/alochaus/taylor-series) for sec 2.1
+- [alochaus/taylor-series](https://github.com/alochaus/taylor-series) for sec 2.1
