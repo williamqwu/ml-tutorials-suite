@@ -25,7 +25,7 @@ class LinearClassifierExp(ExpTracker):
         os.makedirs(self.cfg["tmp_dir"], exist_ok=True)
         # init stats
         #   [epochID, 0]: training err
-        #   [epochID, 1]: training acc
+        #   [epochID, 1]: cum. training acc
         #   [epochID, 2]: testing err
         #   [epochID, 3]: testing acc
         self.stats = np.zeros((self.cfg["epochs"], 4))

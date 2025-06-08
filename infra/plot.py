@@ -2,13 +2,15 @@ import os
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
 import matplotlib.animation as animation
 from IPython.display import HTML
 from PIL import Image
+from sklearn.linear_model import SGDClassifier
 
 CFG_ML1 = {
     "c_pos": "blue",
-    "c_neg": "blurede",
+    "c_neg": "red",
     "c_lds": "#00B050",
     "path_prefix": ".tmp/ml_1",
 }
@@ -27,21 +29,73 @@ def __ml1_load_w(case: int):
     w = np.load(datapath)["w_hist"]
     return w
 
-def ml1_show_dataset_2d(case: int):
+def ml1_calc_margin(case: int):
+    x_np, y_np = __ml1_load_data(case, mode="train")
+    R = np.max(np.linalg.norm(x_np, axis=1))
+    # estimate the margin
+    clf = SGDClassifier(loss="hinge", alpha=1e-6, fit_intercept=False)
+    clf.fit(x_np, y_np)
+    w = clf.coef_[0]
+    w_norm = np.linalg.norm(w)
+    gamma = np.min(y_np * (x_np @ w)) / w_norm
+    mistake_bound = (R / gamma) ** 2
+
+    print(f"R = {R:.4f}")
+    print(f"gamma = {gamma:.4f}")
+    print(f"Mistake Bound <= {mistake_bound:.2f}")
+
+def ml1_show_dataset_2d(case: int, margin: bool = False):
     x_np, y_np = __ml1_load_data(case, mode="train")
     pos = y_np > 0
     neg = y_np < 0
-
+    x_min, x_max = x_np[:, 0].min() - 1, x_np[:, 0].max() + 1
+    y_min, y_max = x_np[:, 1].min() - 1, x_np[:, 1].max() + 1
+    
     plt.figure(figsize=(6,6), dpi=200)
     plt.scatter(x_np[pos, 0], x_np[pos, 1], c=CFG_ML1['c_pos'], label='Positive', alpha=0.6)
     plt.scatter(x_np[neg, 0], x_np[neg, 1], c=CFG_ML1['c_neg'], label='Negative', alpha=0.6)
 
-    plt.title("Visualization of Generated Dataset")
+    if margin:
+        R = np.max(np.linalg.norm(x_np, axis=1))
+        y_np_margin = np.where(y_np > 0, 1, -1)
+        clf = SGDClassifier(loss="hinge", alpha=1e-6, fit_intercept=False)
+        clf.fit(x_np, y_np_margin)
+        w = clf.coef_[0]
+        w_norm = np.linalg.norm(w)
+        gamma = np.min(y_np_margin * (x_np @ w)) / w_norm
+        slope = -w[0] / (w[1] + 1e-6)
+        x_vals = np.linspace(x_np[:, 0].min() - 1, x_np[:, 0].max() + 1, 200)
+        y_center = slope * x_vals
+
+        norm_vec = np.array([-w[1], w[0]]) / w_norm
+        offset = gamma * norm_vec
+
+        plt.plot(x_vals, y_center, color=CFG_ML1['c_lds'], linestyle="--", label="Decision Boundary")
+        plt.plot(x_vals, y_center + offset[1], color=CFG_ML1['c_lds'], linestyle=":")
+        plt.plot(x_vals, y_center - offset[1], color=CFG_ML1['c_lds'], linestyle=":", alpha=0.6)
+        plt.fill_between(
+            x_vals,
+            y_center - offset[1],
+            y_center + offset[1],
+            color=CFG_ML1['c_lds'],
+            alpha=0.1,
+            label="Margin Band (±$\\gamma$)"
+        )
+
+        ball = Circle((0, 0), R, color='gray', linestyle='--', fill=False, alpha=0.2, label='Radius R')
+        plt.gca().add_patch(ball)
+
+        plt.title(f"Dataset with Margin & Radius\n $\\gamma$ = {gamma:.2f}, R = {R:.2f}, Bound ≤ {(R/gamma)**2:.1f}")
+    else:
+        plt.title(f"Visualization of Generated Dataset (Case: {case})")
+    
     plt.xlabel("$x_1$")
     plt.ylabel("$x_2$")
     plt.legend()
     plt.grid(True)
-    plt.axis('equal')
+    # plt.axis('equal')
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
     plt.tight_layout()
     plt.show()
 
