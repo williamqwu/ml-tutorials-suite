@@ -1,4 +1,12 @@
-# Building and Understanding Linear Classifiers with Perceptron
+# =============================================================================
+# LinearClassifierExp: Online Perceptron Experiment Tracker
+# -----------------------------------------------------------------------------
+# Summary: Implements an experiment tracker for conducting online
+#          Perceptron Algorithm on synthetic data with varying margin and
+#          separability conditions.
+# Author: Q.WU
+# =============================================================================
+
 import numpy as np
 import os
 import torch

@@ -1,3 +1,10 @@
+# =============================================================================
+# Visualization & Data Utilities
+# -----------------------------------------------------------------------------
+# Summary: Provides visualization utilities to support main tutorials.
+# Author: Q.WU, w/ credit to alochaus
+# =============================================================================
+
 import os
 import numpy as np
 import torch

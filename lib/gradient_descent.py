@@ -1,3 +1,11 @@
+# =============================================================================
+# LinearGDExp: Gradient Descent Experiment Tracker for Linear Models
+# -----------------------------------------------------------------------------
+# Summary: Implements an experiment tracker for conducting GD and SGD
+#          on synthetic linear classification tasks.
+# Author: Q.WU
+# =============================================================================
+
 import os
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -125,7 +133,8 @@ class LinearGDExp(ExpTracker):
         self.w_hist[self.epochID + 1, -1] = self.model.bias.detach().numpy()
         if saveStats:
             filename = os.path.join(
-                self.cfg["tmp_dir"], f"stats_case{self.cfg['case']}_{self.cfg['tr_mode']}_{self.cfg['lr']}.npz"
+                self.cfg["tmp_dir"],
+                f"stats_case{self.cfg['case']}_{self.cfg['tr_mode']}_{self.cfg['lr']}.npz",
             )
             np.savez(filename, stats=self.stats, w_hist=self.w_hist)
 

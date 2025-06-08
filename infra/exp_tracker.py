@@ -1,3 +1,11 @@
+# =============================================================================
+# Experiment Tracker Base Class (ExpTracker)
+# -----------------------------------------------------------------------------
+# Summary: Defines a minimal abstract interface for tracking essential
+#          elements in ML workflows.
+# Author: Q.WU
+# =============================================================================
+
 from abc import ABC, abstractmethod
 from typing import Any
 import torch
