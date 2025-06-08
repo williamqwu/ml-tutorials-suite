@@ -12,7 +12,7 @@ class LinearClassifierExp(ExpTracker):
         super().__init__()
         # init general config
         self.cfg["case"] = case_study
-        if case_study!=0:
+        if case_study != 0:
             self.cfg["epochs"] = 25
         else:
             self.cfg["epochs"] = 6
@@ -30,45 +30,46 @@ class LinearClassifierExp(ExpTracker):
         #   [epochID, 3]: testing acc
         self.stats = np.zeros((self.cfg["epochs"], 4))
         # init tracker for weight history
-        self.w_hist = np.zeros((self.cfg["epochs"]+1, self.cfg["input_dim"]))
+        self.w_hist = np.zeros((self.cfg["epochs"] + 1, self.cfg["input_dim"]))
         # init exp dependencies
         self.device = torch.device("cpu")
         self.prep_data()
         self.model = Perceptron(self.cfg["input_dim"])
         self.epochID = 0
         torch.manual_seed(self.cfg["seed"])
-        
 
     def prep_data(self, saveData=True):
         def __gen0():
-            x = torch.tensor([
-                [-1.0,  2.0],
-                [ 1.0,  0.0],
-                [ 1.0,  1.0],
-                [-1.0,  0.0],
-                [-1.0, -2.0],
-                [ 1.0, -1.0],
-            ])
+            x = torch.tensor(
+                [
+                    [-1.0, 2.0],
+                    [1.0, 0.0],
+                    [1.0, 1.0],
+                    [-1.0, 0.0],
+                    [-1.0, -2.0],
+                    [1.0, -1.0],
+                ]
+            )
             y = torch.sign(x[:, 0])
             return x, y
-        
+
         def __genk(n, dim, case):
-            if case==1:
-                margin=0.3
+            if case == 1:
+                margin = 0.3
                 x = torch.randn(n, dim)
                 y = torch.sign(x[:, 0] + x[:, 1])
-                # Ensure no label is exactly zero (rare, but for robustness)
+                # ensure no label is exactly zero
                 y[y == 0] = 1
-                # Shift positively labeled points away from boundary
+                # shift positively labeled points away from boundary
                 shift_vec = torch.tensor([1.0, 1.0])
                 for i in range(n):
                     x[i] += margin * y[i] * shift_vec / shift_vec.norm()
                 return x, y
-            elif case==2:
+            elif case == 2:
                 x = torch.randn(n, dim)
                 y = torch.sign(x[:, 0] + x[:, 1])
                 return x, y
-            elif case==3:
+            elif case == 3:
                 x = torch.randn(n, dim)
                 y = torch.sign(x[:, 0] * x[:, 1])
                 return x, y
@@ -79,9 +80,12 @@ class LinearClassifierExp(ExpTracker):
             x_train, y_train = __gen0()
             x_test, y_test = __gen0()
         else:
-            x_train, y_train = __genk(self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"])
-            x_test, y_test = __genk(self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"])
-        
+            x_train, y_train = __genk(
+                self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"]
+            )
+            x_test, y_test = __genk(
+                self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"]
+            )
 
         self.trainloader = DataLoader(
             TensorDataset(x_train, y_train), batch_size=1, shuffle=False
@@ -107,7 +111,9 @@ class LinearClassifierExp(ExpTracker):
     def train_epoch(self):
         dataset = list(self.trainloader)
         if self.epochID >= len(dataset):
-            raise IndexError(f"Epoch {self.epochID} exceeds training data length {len(dataset)}")
+            raise IndexError(
+                f"Epoch {self.epochID} exceeds training data length {len(dataset)}"
+            )
 
         x, y = dataset[self.epochID]
         x, y = x.squeeze(0), y.item()
@@ -143,7 +149,7 @@ class LinearClassifierExp(ExpTracker):
                 train_correct += 1
             else:
                 train_err += 1
-            train_acc = train_correct / (self.epochID+1)
+            train_acc = train_correct / (self.epochID + 1)
             test_err, test_acc = self.test()
             self.stats[self.epochID, :] = [train_err, train_acc, test_err, test_acc]
             if verbose:
@@ -152,9 +158,11 @@ class LinearClassifierExp(ExpTracker):
                     f"Err = {is_correct}, Cum. Train Acc = {train_acc:.4f} | "
                     f"Test Err = {test_err:.0f}, Test Acc = {test_acc:.4f}"
                 )
-        self.w_hist[self.epochID+1, :] = self.model.weights.numpy()
+        self.w_hist[self.epochID + 1, :] = self.model.weights.numpy()
         if saveStats:
-            filename = os.path.join(self.cfg["tmp_dir"], f"stats_case{self.cfg['case']}.npz")
+            filename = os.path.join(
+                self.cfg["tmp_dir"], f"stats_case{self.cfg['case']}.npz"
+            )
             np.savez(filename, stats=self.stats, w_hist=self.w_hist)
 
 
