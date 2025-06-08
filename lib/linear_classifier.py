@@ -13,7 +13,7 @@ class LinearClassifierExp(ExpTracker):
         # init general config
         self.cfg["case"] = case_study
         if case_study!=0:
-            self.cfg["epochs"] = 50
+            self.cfg["epochs"] = 25
         else:
             self.cfg["epochs"] = 6
         self.cfg["input_dim"] = 2
@@ -22,6 +22,7 @@ class LinearClassifierExp(ExpTracker):
         self.cfg["seed"] = 2025
         self.cfg["exp_code"] = "ml_1"  # tmp project codename
         self.cfg["tmp_dir"] = f".tmp/{self.cfg['exp_code']}"
+        os.makedirs(self.cfg["tmp_dir"], exist_ok=True)
         # init stats
         #   [epochID, 0]: training err
         #   [epochID, 1]: training acc
@@ -36,8 +37,7 @@ class LinearClassifierExp(ExpTracker):
         self.model = Perceptron(self.cfg["input_dim"])
         self.epochID = 0
         torch.manual_seed(self.cfg["seed"])
-        # validation
-        os.makedirs(self.cfg["tmp_dir"], exist_ok=True)
+        
 
     def prep_data(self, saveData=True):
         def __gen0():
@@ -52,27 +52,36 @@ class LinearClassifierExp(ExpTracker):
             y = torch.sign(x[:, 0])
             return x, y
         
-        def __gen1(n, dim):
-            x = torch.randn(n, dim)
-            y = torch.sign(x[:, 0] + x[:, 1])
-            return x, y
-
-        def __gen2(n, dim):
-            x = torch.randn(n, dim)
-            y = torch.sign(x[:, 0] * x[:, 1])
-            return x, y
+        def __genk(n, dim, case):
+            if case==1:
+                margin=0.3
+                x = torch.randn(n, dim)
+                y = torch.sign(x[:, 0] + x[:, 1])
+                # Ensure no label is exactly zero (rare, but for robustness)
+                y[y == 0] = 1
+                # Shift positively labeled points away from boundary
+                shift_vec = torch.tensor([1.0, 1.0])
+                for i in range(n):
+                    x[i] += margin * y[i] * shift_vec / shift_vec.norm()
+                return x, y
+            elif case==2:
+                x = torch.randn(n, dim)
+                y = torch.sign(x[:, 0] + x[:, 1])
+                return x, y
+            elif case==3:
+                x = torch.randn(n, dim)
+                y = torch.sign(x[:, 0] * x[:, 1])
+                return x, y
+            else:
+                raise Exception(f"Unknown case type: cfg['case']={self.cfg['case']}.")
 
         if self.cfg["case"] == 0:
             x_train, y_train = __gen0()
             x_test, y_test = __gen0()
-        elif self.cfg["case"] == 1:
-            x_train, y_train = __gen1(self.cfg["n_train"], self.cfg["input_dim"])
-            x_test, y_test = __gen1(self.cfg["n_test"], self.cfg["input_dim"])
-        elif self.cfg["case"] == 2:
-            x_train, y_train = __gen2(self.cfg["n_train"], self.cfg["input_dim"])
-            x_test, y_test = __gen2(self.cfg["n_test"], self.cfg["input_dim"])
         else:
-            raise Exception(f"Unknown case type: cfg['case']={self.cfg['case']}.")
+            x_train, y_train = __genk(self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"])
+            x_test, y_test = __genk(self.cfg["n_train"], self.cfg["input_dim"], self.cfg["case"])
+        
 
         self.trainloader = DataLoader(
             TensorDataset(x_train, y_train), batch_size=1, shuffle=False
@@ -139,8 +148,8 @@ class LinearClassifierExp(ExpTracker):
             self.stats[self.epochID, :] = [train_err, train_acc, test_err, test_acc]
             if verbose:
                 print(
-                    f"Epoch {self.epochID + 1:02d}: "
-                    f"Train Err = {train_err:.0f}, Train Acc = {train_acc:.4f} | "
+                    f"Phase {self.epochID + 1:02d}: "
+                    f"Err = {is_correct}, Cum. Train Acc = {train_acc:.4f} | "
                     f"Test Err = {test_err:.0f}, Test Acc = {test_acc:.4f}"
                 )
         self.w_hist[self.epochID+1, :] = self.model.weights.numpy()
@@ -150,10 +159,6 @@ class LinearClassifierExp(ExpTracker):
 
 
 if __name__ == "__main__":
-    print("Running Easy Case:")
-    easy = LinearClassifierExp(case_study=1)
+    print("Running demo case from slides:")
+    easy = LinearClassifierExp(case_study=0)
     easy.exec()
-
-    print("\nRunning Hard Case:")
-    hard = LinearClassifierExp(case_study=2)
-    hard.exec()
