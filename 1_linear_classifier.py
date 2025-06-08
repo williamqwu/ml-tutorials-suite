@@ -1,5 +1,6 @@
 # Building and Understanding Linear Classifiers with Perceptron
 import numpy as np
+import os
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from infra.exp_tracker import ExpTracker
@@ -15,6 +16,7 @@ class LinearClassifierExp(ExpTracker):
         self.cfg["input_dim"] = 2
         self.cfg["n_train"] = 100
         self.cfg["n_test"] = 100
+        self.cfg["seed"] = 2025
         self.cfg["exp_code"] = "ml_1"  # tmp project codename
         self.cfg["tmp_dir"] = f".tmp/{self.cfg['exp_code']}"
         # init stats
@@ -22,13 +24,16 @@ class LinearClassifierExp(ExpTracker):
         #   [epochID, 1]: training acc
         #   [epochID, 2]: testing loss
         #   [epochID, 3]: testing acc
-        self.stats = np.zeros((self.cfg["epochs"], 3))
+        self.stats = np.zeros((self.cfg["epochs"], 4))
         # init exp dependencies
         self.device = torch.device("cpu")
         self.prep_data()
         self.model = Perceptron(self.cfg["input_dim"])
+        torch.manual_seed(self.cfg["seed"])
+        # validation
+        os.makedirs(self.cfg["tmp_dir"], exist_ok=True)
 
-    def prep_data(self):
+    def prep_data(self, saveData=True):
         def __gen1(n, dim):
             x = torch.randn(n, dim)
             y = torch.sign(x[:, 0] + x[:, 1])
@@ -50,6 +55,15 @@ class LinearClassifierExp(ExpTracker):
 
         self.trainloader = DataLoader(TensorDataset(x_train, y_train), batch_size=1, shuffle=False)
         self.testloader = DataLoader(TensorDataset(x_test, y_test), batch_size=32, shuffle=False)
+
+        if saveData:
+            datapath = os.path.join(self.cfg["tmp_dir"], f"data_case{self.cfg['case']}.pt")
+            torch.save({
+                "x_train": x_train,
+                "y_train": y_train,
+                "x_test": x_test,
+                "y_test": y_test,
+            }, datapath)
 
     def train_epoch(self):
         correct = 0
@@ -89,7 +103,8 @@ class LinearClassifierExp(ExpTracker):
                     f"Test Loss = {test_loss:.4f}, Test Acc = {test_acc:.4f}"
                 )
         if saveStats:
-            np.savez(self.cfg["tmp_dir"], stats=self.stats)
+            filename = os.path.join(self.cfg["tmp_dir"], "stats.npz")
+            np.savez(filename, stats=self.stats)
 
 
 if __name__ == "__main__":
