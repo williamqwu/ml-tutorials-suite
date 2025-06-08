@@ -11,8 +11,11 @@ class LinearClassifierExp(ExpTracker):
     def __init__(self, case_study=1):
         super().__init__()
         # init general config
-        self.cfg["epochs"] = 50
         self.cfg["case"] = case_study
+        if case_study!=0:
+            self.cfg["epochs"] = 50
+        else:
+            self.cfg["epochs"] = 6
         self.cfg["input_dim"] = 2
         self.cfg["n_train"] = 100
         self.cfg["n_test"] = 100
@@ -20,22 +23,35 @@ class LinearClassifierExp(ExpTracker):
         self.cfg["exp_code"] = "ml_1"  # tmp project codename
         self.cfg["tmp_dir"] = f".tmp/{self.cfg['exp_code']}"
         # init stats
-        #   [epochID, 0]: training loss
+        #   [epochID, 0]: training err
         #   [epochID, 1]: training acc
-        #   [epochID, 2]: testing loss
+        #   [epochID, 2]: testing err
         #   [epochID, 3]: testing acc
         self.stats = np.zeros((self.cfg["epochs"], 4))
         # init tracker for weight history
-        self.w_hist = np.zeros((self.cfg["epochs"], self.cfg["input_dim"]))
+        self.w_hist = np.zeros((self.cfg["epochs"]+1, self.cfg["input_dim"]))
         # init exp dependencies
         self.device = torch.device("cpu")
         self.prep_data()
         self.model = Perceptron(self.cfg["input_dim"])
+        self.epochID = 0
         torch.manual_seed(self.cfg["seed"])
         # validation
         os.makedirs(self.cfg["tmp_dir"], exist_ok=True)
 
     def prep_data(self, saveData=True):
+        def __gen0():
+            x = torch.tensor([
+                [-1.0,  2.0],
+                [ 1.0,  0.0],
+                [ 1.0,  1.0],
+                [-1.0,  0.0],
+                [-1.0, -2.0],
+                [ 1.0, -1.0],
+            ])
+            y = torch.sign(x[:, 0])
+            return x, y
+        
         def __gen1(n, dim):
             x = torch.randn(n, dim)
             y = torch.sign(x[:, 0] + x[:, 1])
@@ -46,7 +62,10 @@ class LinearClassifierExp(ExpTracker):
             y = torch.sign(x[:, 0] * x[:, 1])
             return x, y
 
-        if self.cfg["case"] == 1:
+        if self.cfg["case"] == 0:
+            x_train, y_train = __gen0()
+            x_test, y_test = __gen0()
+        elif self.cfg["case"] == 1:
             x_train, y_train = __gen1(self.cfg["n_train"], self.cfg["input_dim"])
             x_test, y_test = __gen1(self.cfg["n_test"], self.cfg["input_dim"])
         elif self.cfg["case"] == 2:
@@ -77,46 +96,56 @@ class LinearClassifierExp(ExpTracker):
             )
 
     def train_epoch(self):
-        correct = 0
-        total = 0
-        loss_sum = 0.0
-        for x, y in self.trainloader:
-            x, y = x.squeeze(0), y.item()
-            y_pred = self.model(x).item()
-            if y_pred != y:
-                self.model.weights.data += y * x
-                loss_sum += 1
-            else:
-                correct += 1
-            total += 1
-        return loss_sum, correct / total
+        dataset = list(self.trainloader)
+        if self.epochID >= len(dataset):
+            raise IndexError(f"Epoch {self.epochID} exceeds training data length {len(dataset)}")
+
+        x, y = dataset[self.epochID]
+        x, y = x.squeeze(0), y.item()
+        y_pred = self.model(x).item()
+
+        is_correct = False
+        if y_pred != y:
+            self.model.weights.data += y * x
+        else:
+            is_correct = True
+
+        return is_correct
 
     def test(self):
         correct = 0
         total = 0
-        loss_sum = 0.0
+        err_sum = 0.0
         for x, y in self.testloader:
             y_pred = self.model(x).squeeze()
-            loss_sum += torch.sum(y_pred != y).item()
+            err_sum += torch.sum(y_pred != y).item()
             correct += torch.sum(y_pred == y).item()
             total += y.size(0)
-        return loss_sum, correct / total
+        return err_sum, correct / total
 
     def exec(self, verbose=True, saveStats=True):
-        for epoch in range(self.cfg["epochs"]):
-            train_loss, train_acc = self.train_epoch()
-            self.model: torch.nn.Module = Perceptron(self.cfg["input_dim"])
-            self.w_hist[epoch, :] = self.model.weights.numpy()
-            test_loss, test_acc = self.test()
-            self.stats[epoch, :] = [train_loss, train_acc, test_loss, test_acc]
+        train_err = 0
+        train_correct = 0
+        assert isinstance(self.model.weights, torch.Tensor)
+        for self.epochID in range(self.cfg["epochs"]):
+            self.w_hist[self.epochID, :] = self.model.weights.numpy()
+            is_correct = self.train_epoch()
+            if is_correct:
+                train_correct += 1
+            else:
+                train_err += 1
+            train_acc = train_correct / (self.epochID+1)
+            test_err, test_acc = self.test()
+            self.stats[self.epochID, :] = [train_err, train_acc, test_err, test_acc]
             if verbose:
                 print(
-                    f"Epoch {epoch + 1:02d}: "
-                    f"Train Loss = {train_loss:.4f}, Train Acc = {train_acc:.4f} | "
-                    f"Test Loss = {test_loss:.4f}, Test Acc = {test_acc:.4f}"
+                    f"Epoch {self.epochID + 1:02d}: "
+                    f"Train Err = {train_err:.0f}, Train Acc = {train_acc:.4f} | "
+                    f"Test Err = {test_err:.0f}, Test Acc = {test_acc:.4f}"
                 )
+        self.w_hist[self.epochID+1, :] = self.model.weights.numpy()
         if saveStats:
-            filename = os.path.join(self.cfg["tmp_dir"], "stats.npz")
+            filename = os.path.join(self.cfg["tmp_dir"], f"stats_case{self.cfg['case']}.npz")
             np.savez(filename, stats=self.stats, w_hist=self.w_hist)
 
 
