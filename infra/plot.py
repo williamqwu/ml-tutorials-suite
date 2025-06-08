@@ -22,6 +22,8 @@ CFG_ML2 = {
     "c_lds": "#00B050",
     "c_loss": "orange",
     "c_acc": "#3399FF",
+    "c_gd": "#3399FF",
+    "c_sgd": "#00B050",
     "path_prefix": ".tmp/ml_2",
 }
 
@@ -464,5 +466,81 @@ def ml2_show_stats(cfg):
     plt.title(
         f"Training Stats (Case={cfg['case']}, Mode={cfg['tr_mode']}, LR={cfg['lr']})"
     )
+    plt.tight_layout()
+    plt.show()
+
+
+def show_trajectory(cfg1, cfg2):
+    def load_w_hist(cfg):
+        exp_postfix = f"case{cfg['case']}_{cfg['tr_mode']}_{cfg['lr']}"
+        datapath = os.path.join(CFG_ML2["path_prefix"], f"stats_{exp_postfix}.npz")
+        return np.load(datapath)["w_hist"]
+
+    def get_label(cfg):
+        return f"{cfg['tr_mode'].upper()} (LR={cfg['lr']})"
+
+    x_np, y_np = __ml2_load_data(cfg1["case"])
+    y_np_bin = 2 * y_np.squeeze() - 1
+    w_hist_1 = load_w_hist(cfg1)
+    w_hist_2 = load_w_hist(cfg2)
+
+    all_w = np.vstack([w_hist_1[:, :2], w_hist_2[:, :2]])
+    w0_vals = np.linspace(all_w[:, 0].min() - 1, all_w[:, 0].max() + 1, 100)
+    w1_vals = np.linspace(all_w[:, 1].min() - 1, all_w[:, 1].max() + 1, 100)
+    W0, W1 = np.meshgrid(w0_vals, w1_vals)
+    Z = np.zeros_like(W0)
+
+    for i in range(W0.shape[0]):
+        for j in range(W0.shape[1]):
+            w_vec = np.array([W0[i, j], W1[i, j]])
+            b = 0
+            logits = x_np @ w_vec + b
+            Z[i, j] = np.mean(np.log(1 + np.exp(-y_np_bin * logits)))
+
+    plt.figure(figsize=(8, 6), dpi=200)
+    contour = plt.contour(W0, W1, Z, levels=20, cmap="Reds")
+    plt.clabel(contour, inline=1, fontsize=8)
+
+    plt.plot(
+        w_hist_1[:, 0],
+        w_hist_1[:, 1],
+        marker="o",
+        linewidth=1.5,
+        color=CFG_ML2["c_gd"],
+        markersize=3,
+        label=get_label(cfg1),
+    )
+    plt.scatter(
+        w_hist_1[0, 0], w_hist_1[0, 1], color="black", marker="x", label="Start ($w_0$)"
+    )
+    plt.scatter(
+        w_hist_1[-1, 0],
+        w_hist_1[-1, 1],
+        color=CFG_ML2["c_gd"],
+        marker="*",
+        label="End GD",
+    )
+    plt.plot(
+        w_hist_2[:, 0],
+        w_hist_2[:, 1],
+        marker="^",
+        linewidth=1.5,
+        color=CFG_ML2["c_sgd"],
+        markersize=3,
+        label=get_label(cfg2),
+    )
+    plt.scatter(
+        w_hist_2[-1, 0],
+        w_hist_2[-1, 1],
+        color=CFG_ML2["c_sgd"],
+        marker="*",
+        label="End SGD",
+    )
+
+    plt.xlabel(r"$w_0$")
+    plt.ylabel(r"$w_1$")
+    plt.title(f"Weight Trajectory Comparison (Case {cfg1['case']})")
+    plt.grid(True)
+    plt.legend()
     plt.tight_layout()
     plt.show()
