@@ -21,6 +21,7 @@ CFG_ML2 = {
     "c_neg": "red",
     "c_lds": "#00B050",
     "c_loss": "orange",
+    "c_acc": "#3399FF",
     "path_prefix": ".tmp/ml_2",
 }
 
@@ -420,28 +421,48 @@ def ml2_animate(cfg, fps: int = 2):
     return HTML(ani.to_jshtml())
 
 
-def ml2_show_loss(cfg):
+def ml2_show_stats(cfg):
     datapath = os.path.join(
         CFG_ML2["path_prefix"],
         f"stats_case{cfg['case']}_{cfg['tr_mode']}_{cfg['lr']}.npz",
     )
-    loss = np.load(datapath)["stats"][:, 0]
+    stats = np.load(datapath)["stats"]
+    loss = stats[:, 0]
+    acc = stats[:, 1]
 
-    plt.figure(figsize=(6, 4), dpi=200)
-    plt.plot(
-        range(1, len(loss) + 1),
+    epochs = np.arange(1, len(loss) + 1)
+
+    fig, ax1 = plt.subplots(figsize=(6, 4), dpi=200)
+
+    ax1.plot(
+        epochs,
         loss,
         label="Training Loss",
         marker="v",
         markersize=3,
         color=CFG_ML2["c_loss"],
     )
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title(
-        f"Training Loss Curve (Case={cfg['case']}, Mode={cfg['tr_mode']}, LR={cfg['lr']})"
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Loss")
+    ax1.grid(True, which="both")
+    ax1.legend(loc="upper left")
+
+    ax2 = ax1.twinx()
+    ax2.plot(
+        epochs,
+        acc,
+        label="Training Accuracy",
+        linestyle="--",
+        marker="^",
+        markersize=3,
+        color=CFG_ML2["c_acc"],
     )
-    plt.grid(True)
+    ax2.set_ylabel("Accuracy")
+    ax2.set_yscale("log")
+    ax2.legend(loc="lower right")
+
+    plt.title(
+        f"Training Stats (Case={cfg['case']}, Mode={cfg['tr_mode']}, LR={cfg['lr']})"
+    )
     plt.tight_layout()
-    plt.legend()
     plt.show()

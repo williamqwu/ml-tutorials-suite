@@ -12,7 +12,7 @@ class LinearGDExp(ExpTracker):
         self.cfg["case"] = case_study
         assert mode in ["gd", "sgd"]
         self.cfg["tr_mode"] = mode
-        self.cfg["epochs"] = 25
+        self.cfg["epochs"] = 50
         self.cfg["input_dim"] = 2
         self.cfg["lr"] = lr
         self.cfg["n_train"] = 200
