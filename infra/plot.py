@@ -35,7 +35,8 @@ def __ml1_load_w(case: int):
 def ml1_calc_margin(case: int):
     x_np, y_np = __ml1_load_data(case, mode="train")
     R = np.max(np.linalg.norm(x_np, axis=1))
-    # estimate the margin since we don't know it via data generation
+    # Warning: for demo purpose only - 
+    #   this part doesn't strictly follow the slides definition
     clf = SGDClassifier(loss="hinge", alpha=1e-6, fit_intercept=False)
     clf.fit(x_np, y_np)
     w = clf.coef_[0]
