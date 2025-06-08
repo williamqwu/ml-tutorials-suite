@@ -125,7 +125,7 @@ class LinearGDExp(ExpTracker):
         self.w_hist[self.epochID + 1, -1] = self.model.bias.detach().numpy()
         if saveStats:
             filename = os.path.join(
-                self.cfg["tmp_dir"], f"stats_case{self.cfg['case']}.npz"
+                self.cfg["tmp_dir"], f"stats_case{self.cfg['case']}_{self.cfg['tr_mode']}_{self.cfg['lr']}.npz"
             )
             np.savez(filename, stats=self.stats, w_hist=self.w_hist)
 
