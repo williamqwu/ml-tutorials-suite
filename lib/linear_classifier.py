@@ -25,6 +25,8 @@ class LinearClassifierExp(ExpTracker):
         #   [epochID, 2]: testing loss
         #   [epochID, 3]: testing acc
         self.stats = np.zeros((self.cfg["epochs"], 4))
+        # init tracker for weight history
+        self.w_hist = np.zeros((self.cfg["epochs"], self.cfg["input_dim"]))
         # init exp dependencies
         self.device = torch.device("cpu")
         self.prep_data()
@@ -103,6 +105,8 @@ class LinearClassifierExp(ExpTracker):
     def exec(self, verbose=True, saveStats=True):
         for epoch in range(self.cfg["epochs"]):
             train_loss, train_acc = self.train_epoch()
+            self.model: torch.nn.Module = Perceptron(self.cfg["input_dim"])
+            self.w_hist[epoch, :] = self.model.weights.numpy()
             test_loss, test_acc = self.test()
             self.stats[epoch, :] = [train_loss, train_acc, test_loss, test_acc]
             if verbose:
@@ -113,7 +117,7 @@ class LinearClassifierExp(ExpTracker):
                 )
         if saveStats:
             filename = os.path.join(self.cfg["tmp_dir"], "stats.npz")
-            np.savez(filename, stats=self.stats)
+            np.savez(filename, stats=self.stats, w_hist=self.w_hist)
 
 
 if __name__ == "__main__":
