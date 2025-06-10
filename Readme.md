@@ -5,6 +5,7 @@ This repository offers a hands-on tutorial series on foundational machine learni
 Additional notes:
 - [Environment Setup Guide](./notes/env.md)
 - [Codebase Structure Overview](./notes/codebase.md)
+- [Colab Usage Guide](./notes/colab.md)
 
 ## Table of Contents
 
