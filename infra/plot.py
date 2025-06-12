@@ -15,6 +15,8 @@ from IPython.display import HTML
 from PIL import Image
 from sklearn.linear_model import SGDClassifier
 import sympy
+from scipy.stats import gaussian_kde
+
 
 CFG_ML1 = {
     "c_pos": "blue",
@@ -32,6 +34,13 @@ CFG_ML2 = {
     "c_gd": "#3399FF",
     "c_sgd": "#00B050",
     "path_prefix": ".tmp/ml_2",
+}
+
+CFG_ML3 = {
+    "path_prefix": ".tmp/ml_3",
+}
+CFG_ML4 = {
+    "path_prefix": ".tmp/ml_4",
 }
 
 
@@ -549,5 +558,133 @@ def show_trajectory(cfg1, cfg2):
     plt.title(f"Weight Trajectory Comparison (Case {cfg1['case']})")
     plt.grid(True)
     plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def __ml3_load_data(ver: str):
+    datapath = os.path.join(CFG_ML3["path_prefix"], "data.pt")
+    data = torch.load(datapath)
+    assert ver in ["train", "test"]
+    if ver == "train":
+        x, y = data["x_train"], data["y_train"]
+    else:
+        x, y = data["x_test"], data["y_test"]
+    return x.numpy(), y.numpy()
+
+
+def ml3_show_dataset_2d(ver: str):
+    x_np, y_np = __ml3_load_data(ver)
+    if x_np.shape[1] > 2:
+        from sklearn.decomposition import PCA
+
+        x_np = PCA(n_components=2).fit_transform(x_np)
+    y_flat = y_np.squeeze()
+    pos = y_flat == 1
+    neg = y_flat == 0
+
+    x_min, x_max = x_np[:, 0].min() - 1, x_np[:, 0].max() + 1
+    y_min, y_max = x_np[:, 1].min() - 1, x_np[:, 1].max() + 1
+
+    plt.figure(figsize=(6, 6), dpi=200)
+
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100))
+    grid_coords = np.vstack([xx.ravel(), yy.ravel()])
+    kde = gaussian_kde(x_np.T)
+    zz = kde(grid_coords).reshape(xx.shape)
+    zz = zz / zz.max()
+
+    plt.contourf(xx, yy, zz, levels=np.linspace(0.05, 1.0, 15), cmap="Greys", alpha=0.3)
+
+    plt.scatter(
+        x_np[pos, 0],
+        x_np[pos, 1],
+        c="blue",
+        label="Positive",
+        alpha=0.6,
+        edgecolors="k",
+        linewidths=0.2,
+    )
+    plt.scatter(
+        x_np[neg, 0],
+        x_np[neg, 1],
+        c="red",
+        label="Negative",
+        alpha=0.6,
+        edgecolors="k",
+        linewidths=0.2,
+    )
+
+    x_vals = np.linspace(x_min, x_max, 100)
+    plt.plot(
+        x_vals,
+        -x_vals,
+        "k--",
+        linewidth=1.5,
+        label="$x_1 + x_2 = 0$ (Decision Boundary)",
+    )
+
+    plt.title(f"Visualization of Synthetic Dataset (Version: {ver})")
+    plt.xlabel("$x_1$")
+    plt.ylabel("$x_2$")
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
+    plt.gca().set_aspect("equal", adjustable="box")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def ml34_show_stats(choice):
+    if choice == "ml3":
+        datapath = os.path.join(
+            CFG_ML3["path_prefix"],
+            "stats.npz",
+        )
+    elif choice == "ml4":
+        datapath = os.path.join(
+            CFG_ML4["path_prefix"],
+            "stats.npz",
+        )
+    else:
+        raise Exception
+
+    stats = np.load(datapath)["stats"]
+    loss = stats[:, 1]
+    acc = stats[:, 2]
+
+    epochs = np.arange(1, len(loss) + 1)
+
+    fig, ax1 = plt.subplots(figsize=(6, 4), dpi=200)
+
+    ax1.plot(
+        epochs,
+        loss,
+        label="Training Loss",
+        marker="v",
+        markersize=3,
+        color=CFG_ML2["c_loss"],
+    )
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Loss")
+    ax1.grid(True, which="both")
+    ax1.legend(loc="upper left")
+
+    ax2 = ax1.twinx()
+    ax2.plot(
+        epochs,
+        acc,
+        label="Training Accuracy",
+        linestyle="--",
+        marker="^",
+        markersize=3,
+        color=CFG_ML2["c_acc"],
+    )
+    ax2.set_ylabel("Accuracy")
+    ax2.set_yscale("log")
+    ax2.legend(loc="lower right")
+
+    plt.title("Training Stats")
     plt.tight_layout()
     plt.show()
