@@ -6,6 +6,7 @@ Additional notes:
 - [Environment Setup Guide](./notes/env.md)
 - [Codebase Structure Overview](./notes/codebase.md)
 - [Colab Usage Guide](./notes/colab.md)
+- [Practical Transformer Architectures (Lab slides for module 3,4)](./notes/transformers_arch.pdf)
 
 ## Table of Contents
 
