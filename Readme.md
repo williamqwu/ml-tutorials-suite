@@ -1,6 +1,6 @@
 # Basic ML Tutorials
 
-This repository offers a hands-on tutorial series on foundational machine learning concepts, designed to accompany the Week 2 lectures of the [REU'25 program](https://reu-ai-edge-osu.github.io/lectures.html) at [AI-EDGE](https://aiedge.osu.edu/).
+This repository offers a hands-on tutorial series on foundational machine learning concepts, designed to accompany the Week 2 lectures of the [REU'25 program](https://reu-ai-edge-osu.github.io/lectures.html) at [AI-EDGE Institute](https://aiedge.osu.edu/).
 
 Additional notes:
 - [Environment Setup Guide](./notes/env.md)
